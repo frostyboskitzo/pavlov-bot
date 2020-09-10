@@ -10,6 +10,8 @@ Discord bot to inferface with Pavlov VR RCON
 - python3.8    
 - pipenv
 
+Note that additional prerequisite exist for running local tests using Jenkins and Docker. This information is provided additionally at the end of the README.
+
 ## Installing pip3
 `sudo apt install python3-pip`
 
@@ -151,3 +153,34 @@ In addition to the implemented RCON commands, the bot has a few advanced functio
 * When a SwitchMap Rcon command is issued, the server always returns true no matter what map (or no valid map at all) was requested. No way to know if the request was valid or not or what will happen. Could be nothing, could be datacenter. It is a mystery. 
 * When a SwitchMap Rcon command is successful in changing map, subsequent ServerInfo requests return previous map's data for duration of current map until either a RotateMap command is issued or map ends naturally and rotates to next map.
 * After a ResetSND command is issued to pavlovserver the very first round can release the players before the countdown is complete. Also on occasion there have been noted CT/T side switches prior to round 9. Both bugs are documented here (https://discord.com/channels/267301605882200065/577875229599072266/729124885141389382).
+
+# Testing Locally with Docker and Jenkins
+Until this repo is built into travis-ci, testing will be run ad-hoc and locally. 
+
+1. Install for your development operating system `docker-ce` - https://docs.docker.com/get-docker
+
+Once installed, you may need to start the docker container engine - I would recommend making sure docker is running by executing the "hello world" example on their page. This can be later cleaned up by running:
+* `docker ps -a` to find the name of the spawned container
+* `docker rm <name>` where `<name>` is the name of the docker container.
+
+2. Ensure that your cloned/forked repo has the following files in the project root:
+* dockerfile
+* jenkinsDockerfile
+
+3. Build the Jenkins container:
+
+`docker build -t jenkins-docker-image -f jenkinsDockerfile .`
+
+4. Run the Jenkins container with the example command (change ports to suit your needs)
+
+`docker run -d -p 8080:8080 --name jenkins-docker-container -v /var/run/docker.sock:/var/run/docker.sock jenkins-docker-image`
+
+This will run a Jenkins instance on port `8080` of your machine. If this is your local machine, you can then access Jenkins by browsing to `http://localhost:8080`. If this is a remote machine, you may need to open firewall ports (or choose a port that works better than `8080` for you) and browse to `http://<your_server_ip>:8080`
+
+5. To activate Jenkins you will need to run `docker exec -it jenkins-docker-container cat var/jenkins_home/secrets/initialAdminPassword` on the container host to output the password. Copy and past this password into the Jenkins browser.
+
+6. Select plugins to install (or use the generic ones if you're not sure and this is a learning excercise) and let Jenkins build.
+
+7. Once Jenkins is built, create your user. You're ready to use Jenkins!
+
+TODO: Include Jenkins project file/autobuild
